@@ -1,10 +1,9 @@
 
 public class Protagonist {
-	String pro;
-	public Protagonist(String s) {
+	public static CountEvents countEvents = null;
+	
+	int pro;
+	public Protagonist(int s) {
 		pro = s;
-	}
-	public String toString() {
-		return pro;
 	}
 }

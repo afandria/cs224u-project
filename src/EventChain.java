@@ -2,15 +2,14 @@ import java.util.*;
 
 
 public class EventChain {
-
-	private Protagonist pro;
-	private Map<Event, Boolean> subjectMap;
+	public static CountEvents countEvents = null;
+	
+	private Protagonist pro = null;
 	private List<Event> events;
 	
 	public EventChain() {
-		pro = null;
 		events = new LinkedList<Event>();
-		subjectMap = new HashMap<Event, Boolean>();
+		// pro is kept as null
 	}
 	
 	public void setProtagonist(Protagonist p) {
@@ -19,17 +18,12 @@ public class EventChain {
 	public Protagonist getProtagonist() {
 		return pro;
 	}
+	public List<Protagonist> likelyProtagonists() {
+		return null; // TODO
+	}
 	
-	private void addEvent(Event e) {
+	public void addEvent(Event e) {
 		events.add(e);
-	}
-	public void addEventAsSbuject(Event e) {
-		addEvent(e);
-		subjectMap.put(e, true);
-	}
-	public void addEventAsObject(Event e) {
-		addEvent(e);
-		subjectMap.put(e, false);
 	}
 	
 	public double getLikelihood() {
