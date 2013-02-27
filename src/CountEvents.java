@@ -1,3 +1,4 @@
+import java.util.*;
 
 public class CountEvents {
 
@@ -13,12 +14,25 @@ public class CountEvents {
 	public int curVerbs = 0;
 	public int curPros = 0;
 	
-	public String[] verbs = new String[MAX_VERBS];
+	public String[] verbs = new String[MAX_VERBS]; // printable verb, CountEvents.verbs[Event.verb]
 	public String[] pros = new String[MAX_PROTAGONISTS];
 	
-	public int[][] eventPairCounts = new int[MAX_EVENTS][MAX_EVENTS];
-	public int[][] eventProCounts = new int[MAX_EVENTS][MAX_PROTAGONISTS];
+	// MOSTLY FOR JUST HELPING US SET MAX_VERBS AND MAX_PROTAGONISTS, UNLIMITED!
+	public Set<String> verbsList = new HashSet<String>();
+	public Set<String> prosList = new HashSet<String>();
+	
+	// go from verb/protagonist to int. IS LIMITED BY MAX_VERBS AND MAX_PROTAGONISTS
+	public Map<String, Integer> verbsMap = new HashMap<String, Integer>();
+	public Map<String, Integer> prosMap = new HashMap<String, Integer>();
+	
+	public Map<Pair<Event, Event>, Integer> eventPairCounts = new HashMap<Pair<Event, Event>, Integer>();
+	public int eventPairOverallCount = 0;
+	
+	public Map<Triple<Event, Event, Protagonist>, Integer> eventPairProCounts =
+		new HashMap<Triple<Event, Event, Protagonist>, Integer>();
+	
 	public int[] eventCounts = new int[MAX_EVENTS]; // redundant, but useful
+	public int eventOverallCount = 0;
 	
 	public CountEvents() {
 		initialize();
@@ -31,9 +45,9 @@ public class CountEvents {
 	private void initialize() {
 		curVerbs = 1;
 		curPros = 2;
-		verbs[0] = "<VERB>";
-		pros[0] = "<PRO>";
-		pros[1] = "<NONE>";
+		verbs[DEFAULT_VERB] = "<VERB>";
+		pros[DEFAULT_PRO] = "<PRO>";
+		pros[NONE_PRO] = "<NONE>";
 	}
 	
 	/**

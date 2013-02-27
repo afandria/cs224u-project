@@ -11,6 +11,8 @@ public class Event {
 		argType = a;
 	}
 	
+	// public boolean isComplement(Event other)
+	
 	public Event getComplementEvent() {
 		return new Event(verb, !argType);
 	}

@@ -5,7 +5,7 @@ public class EventChain {
 	public static CountEvents countEvents = null;
 	
 	private Protagonist pro = null;
-	private List<Event> events;
+	private List<Event> events; // not a set
 	
 	public EventChain() {
 		events = new LinkedList<Event>();
@@ -18,7 +18,10 @@ public class EventChain {
 	public Protagonist getProtagonist() {
 		return pro;
 	}
-	public List<Protagonist> likelyProtagonists() {
+	public List<Protagonist> findLikelyProtagonists(double threshold) {
+		return null; // TODO
+	}
+	public List<Protagonist> findTopKProtagonists(int K) {
 		return null; // TODO
 	}
 	
@@ -32,5 +35,7 @@ public class EventChain {
 	public double getLikelihoodOfAdding(Event e) {
 		return 0.0; // compute likelihood of adding on this bonus event
 		// may also wish to return who the likely protagonists would be of that event
+		
+		// May wish to return 0 if this event is already inside (or has PMI 0 to any event inside)
 	}
 }
