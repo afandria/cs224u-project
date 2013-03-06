@@ -1,7 +1,10 @@
 import java.util.*;
 
 public class CountEvents {
-
+	public static final double BETA = 0.1;
+	public static final double LAMBDA = 0.1;
+	
+	
 	// Issue; we probably can't store everything.
 	// And this way may just take the firstN, rather than the bestN
 	public static final int MAX_VERBS = 20;
@@ -31,6 +34,8 @@ public class CountEvents {
 	public Map<Triple<Event, Event, Protagonist>, Integer> eventPairProCounts =
 		new HashMap<Triple<Event, Event, Protagonist>, Integer>();
 	
+	// mapping from Event to its index in the count array below
+	public Map<Event, Integer> eventsMap = new HashMap<Event, Integer>();
 	public int[] eventCounts = new int[MAX_EVENTS]; // redundant, but useful
 	public int eventOverallCount = 0;
 	
@@ -63,7 +68,9 @@ public class CountEvents {
 		Protagonist.countEvents = countEvents;
 		
 		// for (each document)
-		// for (each sentence that we see)
+		  // keep track of subjects and objects with coreference ids so that we can check for matches
+		  // we're also just saying the first one is the actual name of the protagonist
+		// for (each sentence/clause/subject-event-object that we see)
 		// take the subject verb object
 		// It's possible that there isn't a subject/object, so use NONE
 		// Anyway, if there's still space, add on to the current list of verbs and pros

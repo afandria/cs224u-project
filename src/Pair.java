@@ -4,5 +4,14 @@ public class Pair<X, Y> {
   public Pair(X x, Y y) { 
     this.x = x; 
     this.y = y; 
-  } 
+  }
+  public boolean equals(Object other) {
+	  if (!(other instanceof Pair<?, ?>))
+		  return false;
+	  Pair<?, ?> o = (Pair<?, ?>)other;
+	  return x.equals(o.x) && y.equals(o.y);
+  }
+  public int hashCode() {
+	  return 17 * x.hashCode() + y.hashCode();
+  }
 }
