@@ -4,7 +4,7 @@ import java.util.*;
 public class EventChain {
 	public static CountEvents countEvents = null;
 	
-	private Protagonist pro = null;
+	private Protagonist pro = null; // while a protag may be 'known', it doesn't affect score computation
 	private List<Event> events; // not a set
 	
 	public EventChain() {

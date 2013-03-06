@@ -92,11 +92,48 @@ public class NarrativeSchema {
 		return s;
 	}
 	
-	/*public void addEventWithProtagonists(Event e, Protagonist s, Protagonist o) {
-		addEvent(e);
-		subjects.put(e, s);
-		objects.put(e, o);
-	}*/
+	// a method for FORCE adding events, like when building document event chains
+	public void addEventWithProtagonists(int verb, Protagonist s, Protagonist o) {
+		Event e = new Event(verb, true);
+		Event e2 = e.getComplementEvent();
+		
+		// Add to our global events for the schema
+		eventsAll.add(e);
+		eventsAll.add(e2);
+		
+		// Now add to chains, if possible. Otherwise, add to a new chain.
+		// These chains must mark that their protags are known.
+		boolean sAdded = false;
+		boolean oAdded = false;
+		
+		for (int i = 0; i < chains.size(); i++) {
+			EventChain ec = chains.get(i);
+			if (!sAdded && ec.getProtagonist().equals(s)) {
+				ec.addEvent(e);
+				sAdded = true;
+			}
+			if (!oAdded && ec.getProtagonist().equals(o)) {
+				ec.addEvent(e);
+				oAdded = true;
+			}
+		}
+		
+		// new chain needed if !sAdded or !oAdded
+		if (!sAdded) {
+			EventChain ec = new EventChain();
+			ec.setProtagonist(s);
+			ec.addEvent(e);
+			
+			chains.add(ec);
+		}
+		if (!oAdded) {
+			EventChain ec = new EventChain();
+			ec.setProtagonist(o);
+			ec.addEvent(e);
+			
+			chains.add(ec);
+		}
+	}
 	
 	/*public double getLikelihood() {
 		return 0.0; // compute likelihood in some fashion
