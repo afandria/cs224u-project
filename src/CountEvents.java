@@ -35,6 +35,8 @@ public class CountEvents {
 	public int curPros = 0;
 	public int mentionsMissedCount = 0;
 	public int mentionsHitCount =0;
+	public int totMentions =0;
+
 	
 	//public String[] verbs = new String[MAX_VERBS]; // printable verb, CountEvents.verbs[Event.verb]
 	//public String[] pros = new String[MAX_PROTAGONISTS];
@@ -91,7 +93,7 @@ public class CountEvents {
 		
 		System.out.println("Mentions missed count "+ mentionsMissedCount);
 		System.out.println("Mentions hit count " + mentionsHitCount);
-		
+		System.out.println("Total mentions are " + totMentions);
 	}
 	
 	public void printMentionMap(Map<Pair<Integer,Integer>,Integer> mentionMap){
@@ -115,6 +117,204 @@ public class CountEvents {
 		NarrativeSchema.countEvents = countEvents;
 		Protagonist.countEvents = countEvents;
 		
+		//getCountsByDeps(countEvents);
+		getCountsByMentions(countEvents);
+		
+	}
+	
+	
+	public static void getCountsByMentions(CountEvents countEvents){
+		
+		// Here we try to get the counts by looking at the mentions first
+		
+		// for each document
+			//find all the dependencies and create a map
+			// find all the mentions
+				// for a set of coreferent mentions. 
+					// find the dependencies involving the head tokens of each mention and create an event for each(if not alread present). increment the event counts and alleventcount. Also maintain a separate list of all events that we found. In this list we repeat events. That is if mention 1 and mention 5 are dependent on same verb, two events appear in the list. Just so the counts get repeated
+			//create a protagonist(if it does not already exist) for the lemma of the most frequent headtoken
+			// for all pairs of the above found events, increment the event-event counts. Also increment the event-event-protagonist counts
+		
+		String[] files = new String[1];
+		files[0] = "C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1\\afp_eng_199405.xml.gz";
+		for(String file:files){
+	        AgigaPrefs prefs = new AgigaPrefs();
+	        prefs.setAll(false);
+	        prefs.setWord(true);
+	        prefs.setCoref(true);
+	        prefs.setLemma(true);
+	        prefs.setDeps(DependencyForm.BASIC_DEPS);
+	        int indx =0;
+	        StreamingDocumentReader reader = new StreamingDocumentReader(file, prefs);
+	        int idx=0;
+	        
+	        for(AgigaDocument doc:reader){
+	        	if(idx==10)break;
+	        	// get all mentions for the document
+	        	doc.assignMucStyleIdsAndRefsToMentions(); // is this needed ??
+	        	List<AgigaCoref> corefs = doc.getCorefs();
+	        	List<AgigaSentence> sents = doc.getSents();
+	        
+	        	Map<String,AgigaTypedDependency> depsMap = new HashMap<String, AgigaTypedDependency>();
+	        	for(AgigaSentence sent :sents){
+	        		List<AgigaToken> tokens = sent.getTokens();
+	        		List<AgigaTypedDependency> deps = sent.getAgigaDeps(DependencyForm.BASIC_DEPS);
+	        		for(AgigaTypedDependency dep :deps){
+	        			if(dep.getType().equals("nsubj") || dep.getType().equals("dobj")){
+	        				//AgigaToken tokGov = tokens.get(dep.getGovIdx());//Verb token
+	        				AgigaToken tokDep = tokens.get(dep.getDepIdx());
+	        				depsMap.put(sent.getSentIdx()+ " " +tokDep.getTokIdx() , dep);
+	        			}
+	        		} 
+	        	
+	        	}// dependency map created
+	        	System.out.println("Created Dependency Map");
+	        	
+	        	for(AgigaCoref coref:corefs){
+	        	
+	        		List<AgigaMention> mentions = coref.getMentions();
+	        		Map<String,Integer> lemmaCount = new HashMap<String, Integer>();
+	        		List<Event> events = new ArrayList<Event>();
+	 				Protagonist p = null;
+	        		for(AgigaMention mention: mentions){	
+	        			countEvents.totMentions++;
+	        			AgigaSentence sent = sents.get(mention.getSentenceIdx());// Get the sentence
+	        			List<AgigaToken> tokens = sent.getTokens();
+	        			AgigaToken token = tokens.get(mention.getHeadTokenIdx());
+	        			String lemma = token.getLemma();
+	        			Integer count = lemmaCount.get(lemma);
+	        			if(count == null) {
+	        				lemmaCount.put(lemma, 1);
+	        			}else{ 
+	        				lemmaCount.put(lemma, count.intValue()+1);
+	        			}// We will need the lemma count for the protagonist
+	        			
+	        			//check if the mention is there in the dependency map
+	        			AgigaToken headToken = tokens.get(mention.getHeadTokenIdx());// This is not really needed
+	        			AgigaTypedDependency depend = depsMap.get(mention.getSentenceIdx()+ " "+mention.getHeadTokenIdx());
+	   
+	        			if(depend!=null){
+	        				countEvents.mentionsHitCount++;
+	        				AgigaToken tokGov = tokens.get(depend.getGovIdx());//Verb token
+	        				AgigaToken tokDep = tokens.get(depend.getDepIdx());
+	        				String type = depend.getType();
+	        				Boolean typ = type.equals("nsubj")?true:false;
+	        				Integer temp = countEvents.verbArgTypeMap.get(new Pair<String,String>(tokGov.getLemma(),type));	  
+	        				
+	        				int eventIndex = -1;
+	        				if (temp != null)
+	        					eventIndex = temp.intValue();
+	        				Event e;
+	        				if(eventIndex>=0){
+	        					e=countEvents.eventList.get(eventIndex);
+	        						
+	        				}else{
+	        					eventIndex = countEvents.eventList.size();
+	        					
+	        					e= new Event(eventIndex,typ);	// create a new event object	
+	        					e.argTokId = tokDep.getTokIdx();
+	        					e.sentId = sent.getSentIdx();
+	        					// update countevents and verbargmap
+	        					countEvents.eventList.add(e);
+	        					countEvents.verbArgTypeMap.put(new Pair<String,String>(tokGov.getLemma(),type), eventIndex);
+
+	        					// first time we've seen this verb, so add a new entry in the reverse map
+	        					countEvents.eventToVerbMap.put(e, tokGov.getLemma());
+	        				}
+
+	        				events.add(e);
+        					int currCnt = countEvents.eventsCountMap.get(e)!=null?countEvents.eventsCountMap.get(e):0;
+        					countEvents.eventsCountMap.put(e, currCnt+1);
+        					// increment overall event counter
+        					countEvents.eventOverallCount++;
+
+	        				
+	        			}else{
+	        				
+	        				// print the headmention word and the mentions of this sentence 
+	        				System.out.println("-----------------------------------------------------------------------------------------------------------------------------");
+	        				System.out.println("HEADWORD:" + headToken.getWord()+ " "+ mention.getSentenceIdx()+" "+headToken.getTokIdx());
+	        				AgigaSentence thisSent = sents.get(mention.getSentenceIdx());
+	        				List<AgigaTypedDependency> deps = thisSent.getAgigaDeps(DependencyForm.BASIC_DEPS);
+	        				for(AgigaTypedDependency dep:deps){
+	        					AgigaToken tokDep = tokens.get(dep.getDepIdx());
+	        					if(tokDep.getTokIdx() == headToken.getTokIdx() && (dep.getType().equals("nsubj") ||dep.getType().equals("dobj") ) ){
+	    	        				countEvents.mentionsMissedCount++;
+	        						System.out.println(tokDep.getWord()+  " " + thisSent.getSentIdx()+ " "+tokDep.getCharOffBegin()+" "+dep.getType()+ " "+tokDep.getTokIdx());
+	        					}
+	        				
+	        				}
+	        				
+	        				System.out.println("--------------------------------------------------------------------------------------------------------------------------------");
+	        			}
+	        			
+	        		} // seen all coreferent mentions in this chain and have created a list of events. Also have updated individual event counts and overallcount
+	        		
+	        		// Now create/find the protagonist
+	        		int max =-1;
+	        		String protLemma = "";
+	        		for(String lemma:lemmaCount.keySet()){
+	        			if(lemmaCount.get(lemma) >= max){
+	        				protLemma = lemma;
+	        				max = lemmaCount.get(lemma);
+	        			}
+	        		}
+
+   
+	        		if(max > 0){ // Mentions list is not empty. Which it reallly should not be. But who the hell knows anything anymore!!
+        				int protIndex = countEvents.prosMap.get(protLemma)!=null?countEvents.prosMap.get(protLemma):-1;
+        				if(protIndex >=0 ){
+        					p = countEvents.protList.get(protIndex);
+        				}else{// make a new protagonist if not present
+        					protIndex = countEvents.protList.size();
+        					p = new Protagonist(protIndex);
+        					countEvents.protList.add(p);
+        					countEvents.prosMap.put(protLemma, protIndex);
+        					
+        				}
+	        			
+	        		}// okay. done with all that. Now to pair counts and stuff
+	        		
+	        		for(Event e1:events){
+	        			for(Event e2:events){
+	        				if(e1.equals(e2)) continue;
+	        				Integer temp = countEvents.eventPairCounts.get(new Pair<Event,Event>(e1,e2));
+	        				int currCount;
+	        				if(temp!=null){
+	        					currCount = temp.intValue();
+	        				}else{
+	        					currCount =0;
+	        				}
+    						countEvents.eventPairCounts.put(new Pair<Event,Event>(e1,e2),currCount+1 ); //  order of the pair does not matter. The hashcode should reflect this I guess. if we want the order to matter we should follow some convention like <oldevent,newevent>	        						
+    				
+    						if(p!=null){// should not happen really
+    							temp = countEvents.eventPairProCounts.get(new Triple<Event,Event,Protagonist>(e1,e2,p));
+    							if(temp!=null){
+    								currCount = temp.intValue();
+    							}else{
+    								currCount=0;
+    							}
+    							countEvents.eventPairProCounts.put(new Triple<Event,Event,Protagonist>(e1,e2,p), currCount+1);
+    						}
+	        				
+	        			}
+	        			
+	        		}
+	        		
+	        		
+	        		
+	        	}// dealt with the corefs in this documents
+	        	idx++;	
+	        }//document dealt with
+	        			
+		} // all files read
+		countEvents.printCounts();
+		
+	}
+	
+	
+	
+	public static void getCountsByDeps(CountEvents countEvents){
 		
 		// for (each document)
 		// for (each sentence that we see)
@@ -123,9 +323,10 @@ public class CountEvents {
 		// Anyway, if there's still space, add on to the current list of verbs and pros
 		// And add on to the counts properly
 		
+		
 		String[] files = new String[1];
 		files[0] = "C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1\\afp_eng_199405.xml.gz";
-		
+	
 		for(String file: files){
 	        AgigaPrefs prefs = new AgigaPrefs();
 	        prefs.setAll(false);
@@ -291,6 +492,7 @@ public class CountEvents {
 			countEvents.printCounts();
 		}// done with all files
 		
+
 		
 	}
 
