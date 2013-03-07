@@ -125,7 +125,7 @@ public class CountEvents {
 	
 	public static void getCountsByMentions(CountEvents countEvents){
 		
-		// Here we try to get the counts by looking at the mentions first
+
 		
 		// for each document
 			//find all the dependencies and create a map
@@ -149,7 +149,7 @@ public class CountEvents {
 	        int idx=0;
 	        
 	        for(AgigaDocument doc:reader){
-	        	if(idx==10)break;
+	        	//if(idx==40)break;
 	        	// get all mentions for the document
 	        	doc.assignMucStyleIdsAndRefsToMentions(); // is this needed ??
 	        	List<AgigaCoref> corefs = doc.getCorefs();
@@ -168,7 +168,7 @@ public class CountEvents {
 	        		} 
 	        	
 	        	}// dependency map created
-	        	System.out.println("Created Dependency Map");
+	        	//System.out.println("Created Dependency Map");
 	        	
 	        	for(AgigaCoref coref:corefs){
 	        	
@@ -232,20 +232,25 @@ public class CountEvents {
 	        			}else{
 	        				
 	        				// print the headmention word and the mentions of this sentence 
-	        				System.out.println("-----------------------------------------------------------------------------------------------------------------------------");
-	        				System.out.println("HEADWORD:" + headToken.getWord()+ " "+ mention.getSentenceIdx()+" "+headToken.getTokIdx());
+	        			//	System.out.println("-----------------------------------------------------------------------------------------------------------------------------");
+	        			//	System.out.println("HEADWORD:" + headToken.getWord()+ " "+ mention.getSentenceIdx()+" "+headToken.getTokIdx());
 	        				AgigaSentence thisSent = sents.get(mention.getSentenceIdx());
 	        				List<AgigaTypedDependency> deps = thisSent.getAgigaDeps(DependencyForm.BASIC_DEPS);
 	        				for(AgigaTypedDependency dep:deps){
 	        					AgigaToken tokDep = tokens.get(dep.getDepIdx());
-	        					if(tokDep.getTokIdx() == headToken.getTokIdx() && (dep.getType().equals("nsubj") ||dep.getType().equals("dobj") ) ){
+	        				
+	        					if(tokDep.getTokIdx()== headToken.getTokIdx() && !tokDep.getWord().equalsIgnoreCase(headToken.getWord())){
+	        						countEvents.mentionsMissedCount++;
+	        					}
+	        					if(tokDep.getTokIdx() == headToken.getTokIdx() && tokDep.getWord().equalsIgnoreCase(headToken.getWord()) &&(dep.getType().equals("nsubj") ||dep.getType().equals("dobj") ) ){
 	    	        				countEvents.mentionsMissedCount++;
-	        						System.out.println(tokDep.getWord()+  " " + thisSent.getSentIdx()+ " "+tokDep.getCharOffBegin()+" "+dep.getType()+ " "+tokDep.getTokIdx());
+	        				//		System.out.println(tokDep.getWord()+  " " + thisSent.getSentIdx()+ " "+tokDep.getCharOffBegin()+" "+dep.getType()+ " "+tokDep.getTokIdx());
 	        					}
 	        				
 	        				}
 	        				
-	        				System.out.println("--------------------------------------------------------------------------------------------------------------------------------");
+	        			//	System.out.println("--------------------------------------------------------------------------------------------------------------------------------");
+	        			
 	        			}
 	        			
 	        		} // seen all coreferent mentions in this chain and have created a list of events. Also have updated individual event counts and overallcount
