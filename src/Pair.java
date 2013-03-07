@@ -10,8 +10,9 @@ public class Pair<X, Y> {
 		  return false;
 	  Pair<?, ?> o = (Pair<?, ?>)other;
 	  return x.equals(o.x) && y.equals(o.y);
-  }
+  }  
+  
   public int hashCode() {
-	  return 17 * x.hashCode() + y.hashCode();
+	  return x.hashCode() + y.hashCode();
   }
 }

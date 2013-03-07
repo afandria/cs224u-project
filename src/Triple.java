@@ -15,6 +15,6 @@ public class Triple<X, Y, Z> {
 	  return x.equals(o.x) && y.equals(o.y) && z.equals(o.z);
   }
   public int hashCode() {
-	  return 17 * x.hashCode() + 23 * y.hashCode() + z.hashCode();
+	  return x.hashCode() +  y.hashCode() + z.hashCode();
   }
 }

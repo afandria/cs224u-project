@@ -13,6 +13,20 @@ public class Event {
 	
 	// public boolean isComplement(Event other)
 	
+		
+	public boolean equals(Object e){
+		if (!(e instanceof Event))
+			  return false;
+		Event o = (Event)e;
+		if(o.verb==this.verb && o.argType == this.argType) return true;
+		return false;
+		
+	}
+	 
+	public int hashCode() {
+		return  argType?verb+1:-(verb+1);
+	}
+	
 	public Event getComplementEvent() {
 		return new Event(verb, !argType);
 	}
@@ -25,8 +39,8 @@ public class Event {
 		Integer cooccur = countEvents.eventPairCounts.get(new Pair<Event, Event>(this, e));
 		double cooccurP = (cooccur + 0.0) / countEvents.eventPairOverallCount;
 		
-		int thisCount = countEvents.eventCounts[countEvents.eventsMap.get(this)];
-		int eCount = countEvents.eventCounts[countEvents.eventsMap.get(e)];
+		int thisCount = countEvents.eventCountMap.get(this);
+		int eCount = countEvents.eventCounts.get(e);
 		
 		double thisP = (thisCount + 0.0) / countEvents.eventOverallCount;
 		double eP = (eCount + 0.0) / countEvents.eventOverallCount;
