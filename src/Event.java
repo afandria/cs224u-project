@@ -39,8 +39,8 @@ public class Event {
 		Integer cooccur = countEvents.eventPairCounts.get(new Pair<Event, Event>(this, e));
 		double cooccurP = (cooccur + 0.0) / countEvents.eventPairOverallCount;
 		
-		int thisCount = countEvents.eventCountMap.get(this);
-		int eCount = countEvents.eventCounts.get(e);
+		int thisCount = countEvents.eventsCountMap.get(this);
+		int eCount = countEvents.eventsCountMap.get(e);
 		
 		double thisP = (thisCount + 0.0) / countEvents.eventOverallCount;
 		double eP = (eCount + 0.0) / countEvents.eventOverallCount;

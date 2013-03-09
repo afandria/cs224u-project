@@ -45,8 +45,8 @@ public class EventChain {
 		double bestS = -1;
 		Protagonist bestP = null;
 		
-		for (int i = 0; i < countEvents.pros.length; i++) {
-			Protagonist p = new Protagonist(i);
+		for (int i = 0; i < countEvents.protList.size(); i++) {
+			Protagonist p = countEvents.protList.get(i);//new Protagonist(i);
 			double s = getScore(p);
 			
 			if (bestP == null || s > bestS) {
@@ -75,8 +75,8 @@ public class EventChain {
 		double bestS = -1;
 		Protagonist bestP = null;
 		
-		for (int i = 0; i < countEvents.pros.length; i++) {
-			Protagonist p = new Protagonist(i);
+		for (int i = 0; i < countEvents.protList.size(); i++) {
+			Protagonist p = countEvents.protList.get(i);//new Protagonist(i);
 			
 			double s = getScore(p);
 			for (int j = 0; j < events.size(); j++) {

@@ -2,5 +2,9 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="C:/Users/AlexFandrianto/Desktop/Articles/Stanford/CS224U/agiga_1.0/lib/log4j-1.2.16.jar"/>
+	<classpathentry kind="lib" path="C:/Users/AlexFandrianto/Desktop/Articles/Stanford/CS224U/agiga_1.0/lib/stanford-parser-2012-07-09.jar"/>
+	<classpathentry kind="lib" path="C:/Users/AlexFandrianto/Desktop/Articles/Stanford/CS224U/agiga_1.0/lib/vtd-xml-2.10.jar"/>
+	<classpathentry kind="lib" path="agiga_1.0/classes"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
