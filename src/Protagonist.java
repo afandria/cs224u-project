@@ -6,4 +6,8 @@ public class Protagonist {
 	public Protagonist(int s) {
 		pro = s;
 	}
+	
+	public String toString() {
+		return pro + ":" + countEvents.proIDToStringList.get(pro);
+	}
 }

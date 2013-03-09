@@ -15,4 +15,8 @@ public class Pair<X, Y> {
   public int hashCode() {
 	  return x.hashCode() + y.hashCode();
   }
+  
+  public String toString() {
+	  return "<" + x.toString() + "," + y.toString() + ">";
+  }
 }

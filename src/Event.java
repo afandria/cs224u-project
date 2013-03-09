@@ -6,6 +6,8 @@ public class Event {
 
 	public int verb;
 	public boolean argType;
+	public int argTokId;
+	public int sentId;
 	public Event(int v, boolean a) {
 		verb = v;
 		argType = a;
@@ -57,5 +59,12 @@ public class Event {
 		freq = Math.log(freq);
 		freq *= CountEvents.LAMBDA;
 		return getPMI(e) + freq;
+	}
+	
+	public String toString() {
+		if (argType)
+			return "" + verb + " " + argType + ":" + countEvents.eventToVerbMap.get(this) + "S";
+		else
+			return "" + verb + " " + argType + ":" + countEvents.eventToVerbMap.get(this) + "O";
 	}
 }

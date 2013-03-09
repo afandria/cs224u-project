@@ -1,3 +1,9 @@
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 import edu.jhu.agiga.AgigaCoref;
@@ -21,6 +27,17 @@ public class CountEvents {
 	public static final double BETA = 0.1;
 	public static final double LAMBDA = 0.1;
 	
+	// for proIDToStringList and protList
+	public static final String protagonistNamesFileOut = "protagonistNames.txt";
+	// for eventToVerbMap and eventList
+	public static final String eventToVerbsFileOut = "eventToVerbs.txt";
+	// for eventCountsMap and eventOverallCount
+	public static final String eventCountsFileOut = "eventCounts.txt";
+	// for eventPairCounts and eventPairOverallCount
+	public static final String eventPairCountsFileOut = "eventPairCounts.txt";
+	// for eventPairProCounts
+	public static final String eventPairProCountsFileOut = "eventPairProCounts.txt";
+	
 	
 	// Issue; we probably can't store everything.
 	// And this way may just take the firstN, rather than the bestN
@@ -31,8 +48,8 @@ public class CountEvents {
 	public static final int DEFAULT_PRO = 0;
 	public static final int NONE_PRO = 1;
 	
-	public int curVerbs = 0;
-	public int curPros = 0;
+	//public int curVerbs = 0;
+	//public int curPros = 0;
 	public int mentionsMissedCount = 0;
 	public int mentionsHitCount =0;
 	public int totMentions =0;
@@ -52,6 +69,7 @@ public class CountEvents {
 	// go from verb/protagonist to int. IS LIMITED BY MAX_VERBS AND MAX_PROTAGONISTS
 	public Map<Pair<String,String>, Integer> verbArgTypeMap = new HashMap<Pair<String,String>, Integer>();
 	public Map<String, Integer> prosMap = new HashMap<String, Integer>();
+	public List<String> proIDToStringList = new ArrayList<String>();
 	
 	public Map<Pair<Event, Event>, Integer> eventPairCounts = new HashMap<Pair<Event, Event>, Integer>();
 	public int eventPairOverallCount = 0;
@@ -71,16 +89,179 @@ public class CountEvents {
 		initialize();
 	}
 	
-	public CountEvents(String filename) {
+	public CountEvents(
+			String protagonistNamesFile, // for proIDToStringList and protList
+			String eventToVerbsFile, // for eventToVerbMap and eventList
+			String eventCountsFile, // for eventCountsMap and eventOverallCount
+			String eventPairCountsFile, // for eventPairCounts and eventPairOverallCount
+			String eventPairProCountsFile // for eventPairProCounts
+			) { 
 		// I would load the data in here directly instead
+		
+		BufferedReader buf;
+		try {
+			/** first fill up our data **/
+			
+			// Protagonists
+			buf = new BufferedReader(new FileReader(protagonistNamesFile));
+			
+			String line;
+			while ((line = buf.readLine()) != null) {
+				Protagonist p = new Protagonist(protList.size());
+				protList.add(p);
+				proIDToStringList.add(line);
+			}
+			buf.close();
+			
+			// Verbs
+			buf = new BufferedReader(new FileReader(eventToVerbsFile));
+			
+			while ((line = buf.readLine()) != null) {
+				String verb = line.substring(0, line.indexOf(" "));
+				boolean argType = Boolean.parseBoolean(line.substring(line.indexOf(" ") + 1));
+				Event e = new Event(eventList.size(), argType);
+				eventList.add(e);
+				eventToVerbMap.put(e, verb);
+				if (argType)
+					verbArgTypeMap.put(new Pair<String, String>(verb, "nsubj"), e.verb);
+				else
+					verbArgTypeMap.put(new Pair<String, String>(verb, "dobj"), e.verb);
+			}
+			buf.close();
+			
+			// Event Counts
+			buf = new BufferedReader(new FileReader(eventCountsFile));
+			
+			int index = 0;
+			while ((line = buf.readLine()) != null) {
+				int count = Integer.parseInt(line);
+				eventOverallCount += count;
+				Event e = eventList.get(index);
+				
+				eventsCountMap.put(e, count);
+				
+				index++;
+			}
+			buf.close();
+			
+			// Event Pair Counts
+			buf = new BufferedReader(new FileReader(eventPairCountsFile));
+			
+			while ((line = buf.readLine()) != null) {
+				StringTokenizer tz = new StringTokenizer(line, " ");
+				int e1 = Integer.parseInt(tz.nextToken());
+				int e2 = Integer.parseInt(tz.nextToken());
+				int count = Integer.parseInt(tz.nextToken());
+				
+				eventPairOverallCount += count;
+				
+				Pair<Event, Event> pair = new Pair<Event, Event>(eventList.get(e1), eventList.get(e2));
+				
+				eventPairCounts.put(pair, count);
+			}
+			buf.close();
+			
+			// Event Pair Pro Counts
+			buf = new BufferedReader(new FileReader(eventPairProCountsFile));
+			
+			while ((line = buf.readLine()) != null) {
+				StringTokenizer tz = new StringTokenizer(line, " ");
+				int e1 = Integer.parseInt(tz.nextToken());
+				int e2 = Integer.parseInt(tz.nextToken());
+				int pro = Integer.parseInt(tz.nextToken());
+				int count = Integer.parseInt(tz.nextToken());
+				
+				Triple<Event, Event, Protagonist> triple
+					= new Triple<Event, Event, Protagonist>(eventList.get(e1), eventList.get(e2), protList.get(pro));
+				
+				eventPairProCounts.put(triple, count);
+			}
+			buf.close();
+			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 	
 	private void initialize() {
-		curVerbs = 1;
-		curPros = 2;
+		//curVerbs = 1;
+		//curPros = 2;
 		//verbs[DEFAULT_VERB] = "<VERB>";
 		//pros[DEFAULT_PRO] = "<PRO>";
 		//pros[NONE_PRO] = "<NONE>";
+	}
+	
+	public void writeCounts() {
+		// for proIDToStringList and protList
+		// for eventToVerbMap and eventList
+		// for eventCountsMap and eventOverallCount
+		// for eventPairCounts and eventPairOverallCount
+		// for eventPairProCounts
+		System.out.println("Trying to write");
+		
+		try{
+			// Protagonists (proStr)
+			BufferedWriter out = new BufferedWriter(new FileWriter(protagonistNamesFileOut));
+			for (String pro : proIDToStringList) {
+				out.write(pro);
+				out.write("\n");
+			}
+			//Close the output stream
+			out.close();
+			
+			// Verbs (verbStr argType)
+			out = new BufferedWriter(new FileWriter(eventToVerbsFileOut));
+			for (Event e : eventToVerbMap.keySet()) {
+				out.write(eventToVerbMap.get(e));
+				out.write(" " + e.argType);
+				out.write("\n");
+			}
+			//Close the output stream
+			out.close();
+			
+			// eventCounts (eventID count)
+			out = new BufferedWriter(new FileWriter(eventCountsFileOut));
+			for (Event e : eventsCountMap.keySet()) {
+				out.write("" + e.verb);
+				out.write(" " + eventsCountMap.get(e));
+				out.write("\n");
+			}
+			//Close the output stream
+			out.close();
+			
+			// eventPairCounts (eventID1 eventID2 count)
+			out = new BufferedWriter(new FileWriter(eventPairCountsFileOut));
+			for (Pair<Event, Event> p : eventPairCounts.keySet()) {
+				out.write("" + p.x.verb);
+				out.write(" ");
+				out.write("" + p.y.verb);
+				out.write(" " + eventPairCounts.get(p));
+				out.write("\n");
+			}
+			//Close the output stream
+			out.close();
+			
+			// eventPairProCounts (eventID1 eventID2 proID count)
+			out = new BufferedWriter(new FileWriter(eventPairProCountsFileOut));
+			for (Triple<Event, Event, Protagonist> t : eventPairProCounts.keySet()) {
+				out.write("" + t.x.verb);
+				out.write(" ");
+				out.write("" + t.y.verb);
+				out.write(" ");
+				out.write("" + t.z.pro);
+				out.write(" " + eventPairProCounts.get(t));
+				out.write("\n");
+			}
+			//Close the output stream
+			out.close();
+		}catch (Exception e){//Catch exception if any
+			System.err.println("Error: " + e.getMessage());
+		}
 	}
 	
 	public void printCounts(){
@@ -94,6 +275,25 @@ public class CountEvents {
 		System.out.println("Mentions missed count "+ mentionsMissedCount);
 		System.out.println("Mentions hit count " + mentionsHitCount);
 		System.out.println("Total mentions are " + totMentions);
+		
+		System.out.println("The total event pair count is " + eventPairOverallCount);
+		
+		System.out.println("Pair Counts");
+		for (Pair<Event, Event> pair : eventPairCounts.keySet()) 
+			System.out.println(pair + " => " + eventPairCounts.get(pair));
+
+		System.out.println("Pair with Arguments Counts");
+		for (Triple<Event, Event, Protagonist> triple : eventPairProCounts.keySet()) 
+			System.out.println(triple+ " => " + eventPairProCounts.get(triple));
+
+		System.out.println("Protagonists List");
+		for (String pro : prosMap.keySet())
+			System.out.println(pro + " => " + prosMap.get(pro));
+		
+		System.out.println("Events/Verbs List again");
+		for(Event e :eventsCountMap.keySet()){
+			System.out.println(e);
+		}
 	}
 	
 	public void printMentionMap(Map<Pair<Integer,Integer>,Integer> mentionMap){
@@ -117,8 +317,11 @@ public class CountEvents {
 		NarrativeSchema.countEvents = countEvents;
 		Protagonist.countEvents = countEvents;
 		
+		System.out.println(System.currentTimeMillis());
 		//getCountsByDeps(countEvents);
 		getCountsByMentions(countEvents);
+		
+		System.out.println(System.currentTimeMillis());
 		
 	}
 	
@@ -135,8 +338,14 @@ public class CountEvents {
 			//create a protagonist(if it does not already exist) for the lemma of the most frequent headtoken
 			// for all pairs of the above found events, increment the event-event counts. Also increment the event-event-protagonist counts
 		
-		String[] files = new String[1];
-		files[0] = "C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1\\afp_eng_199405.xml.gz";
+		ArrayList<String> files = new ArrayList<String>();
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199405.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199406.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199407.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199408.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199409.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199410.xml.gz");
+		//"C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1\\afp_eng_199405.xml.gz";
 		for(String file:files){
 	        AgigaPrefs prefs = new AgigaPrefs();
 	        prefs.setAll(false);
@@ -149,7 +358,9 @@ public class CountEvents {
 	        int idx=0;
 	        
 	        for(AgigaDocument doc:reader){
-	        	//if(idx==40)break;
+	        	//if(idx==10)break;
+	        	if (idx % 100 == 0)
+	        		System.out.println(idx);
 	        	// get all mentions for the document
 	        	doc.assignMucStyleIdsAndRefsToMentions(); // is this needed ??
 	        	List<AgigaCoref> corefs = doc.getCorefs();
@@ -275,6 +486,7 @@ public class CountEvents {
         					p = new Protagonist(protIndex);
         					countEvents.protList.add(p);
         					countEvents.prosMap.put(protLemma, protIndex);
+        					countEvents.proIDToStringList.add(protLemma);
         					
         				}
 	        			
@@ -291,7 +503,7 @@ public class CountEvents {
 	        					currCount =0;
 	        				}
     						countEvents.eventPairCounts.put(new Pair<Event,Event>(e1,e2),currCount+1 ); //  order of the pair does not matter. The hashcode should reflect this I guess. if we want the order to matter we should follow some convention like <oldevent,newevent>	        						
-    				
+    						countEvents.eventPairOverallCount++;
     						if(p!=null){// should not happen really
     							temp = countEvents.eventPairProCounts.get(new Triple<Event,Event,Protagonist>(e1,e2,p));
     							if(temp!=null){
@@ -314,6 +526,7 @@ public class CountEvents {
 	        			
 		} // all files read
 		countEvents.printCounts();
+		countEvents.writeCounts();
 		
 	}
 	
@@ -329,8 +542,13 @@ public class CountEvents {
 		// And add on to the counts properly
 		
 		
-		String[] files = new String[1];
-		files[0] = "C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1\\afp_eng_199405.xml.gz";
+		ArrayList<String> files = new ArrayList<String>();
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199405.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199406.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199407.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199408.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199409.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199410.xml.gz");			//"C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1\\afp_eng_199405.xml.gz";
 	
 		for(String file: files){
 	        AgigaPrefs prefs = new AgigaPrefs();
@@ -476,7 +694,8 @@ public class CountEvents {
 		        						countEvents.mentionsHitCount++;
 		        						int currCount = (countEvents.eventPairCounts.get(new Pair<Event,Event>(e1,e))!=null)?countEvents.eventPairCounts.get(new Pair<Event,Event>(e1,e)):0;
 		        						countEvents.eventPairCounts.put(new Pair<Event,Event>(e1,e),currCount+1 ); //  order of the pair does not matter. The hashcode should reflect this I guess. if we want the order to matter we should follow some convention like <oldevent,newevent>	        						
-		        				
+		        						countEvents.eventPairOverallCount++;
+		        						
 		        						currCount = countEvents.eventPairProCounts.get(new Triple<Event,Event,Protagonist>(e1,e,p))!=null?countEvents.eventPairProCounts.get(new Triple<Event,Event,Protagonist>(e1,e,p)):0;
 		        						countEvents.eventPairProCounts.put(new Triple<Event,Event,Protagonist>(e1,e,p), currCount+1);
 		        					}
@@ -492,12 +711,10 @@ public class CountEvents {
 	        	}
 	        	indx++;
 	        	countEvents.printMentionMap(mentionMap);
-	        }// done with all documents in this file	        
-	        
-			countEvents.printCounts();
+	        }// done with all documents in this file
 		}// done with all files
-		
-
+		countEvents.printCounts();
+		countEvents.writeCounts();
 		
 	}
 

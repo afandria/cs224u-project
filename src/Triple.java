@@ -17,4 +17,8 @@ public class Triple<X, Y, Z> {
   public int hashCode() {
 	  return x.hashCode() +  y.hashCode() + z.hashCode();
   }
+ 
+  public String toString() {
+	  return "<" + x.toString() + "," + y.toString() + "," + z.toString() + ">";
+  }
 }
