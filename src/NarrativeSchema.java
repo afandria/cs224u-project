@@ -25,12 +25,11 @@ public class NarrativeSchema {
 	// public List<EventChain> getAllChains()
 	// public List<EventChain> getChainsOfLength(int minimum) 
 	
-	public double addEvent(int verb) {
-		Event e = new Event(verb, true);
-		Event e2 = e.getComplementEvent();
-		
-		eventsAll.add(e);
-		eventsAll.add(e2);
+	public double getEventScore(String v) {
+		int verbS = countEvents.verbArgTypeMap.get(new Pair<String, String>(v, "nsubj"));
+		int verbO = countEvents.verbArgTypeMap.get(new Pair<String, String>(v, "dobj"));
+		Event e = new Event(verbS, true);
+		Event e2 = new Event(verbO, false);
 		
 		// You have to find out the best one or make a new one, I guess
 		int bestI1 = -1;
@@ -61,6 +60,50 @@ public class NarrativeSchema {
 				bestScore2 = score2;
 			}
 		}
+		
+		// return the score of this addition!
+		return bestScore1 + bestScore2;
+	}
+	
+	public double addEvent(String v) {
+		int verbS = countEvents.verbArgTypeMap.get(new Pair<String, String>(v, "nsubj"));
+		int verbO = countEvents.verbArgTypeMap.get(new Pair<String, String>(v, "dobj"));
+		Event e = new Event(verbS, true);
+		Event e2 = new Event(verbO, false);
+		
+		// You have to find out the best one or make a new one, I guess
+		int bestI1 = -1;
+		double bestScore1 = CountEvents.BETA;
+		int bestI2 = -1;
+		double bestScore2 = CountEvents.BETA;
+		for (int i = 0; i < chains.size(); i++) {
+			EventChain chain = chains.get(i);
+			double score1 = chain.getChainSimilarity(e);
+			double score2 = chain.getChainSimilarity(e2);
+			
+			// Careful, we don't want to add to have this chain on both sides of the event...
+			// So make 1 of the scores 0, if this happens.
+			if (score1 > bestScore1 && score2 > bestScore2) {
+				if (score2 > score1)
+					score1 = 0;
+				else
+					score2 = 0;
+			}
+			
+			// Update if you can
+			if (score1 > bestScore1) {
+				bestI1 = i;
+				bestScore1 = score1;
+			}
+			if (score2 > bestScore2) {
+				bestI2 = i;
+				bestScore2 = score2;
+			}
+		}
+		
+		// Add the event
+		eventsAll.add(e);
+		eventsAll.add(e2);
 		
 		// Now assign the chains properly, possibly making a new one if you have to
 		if (bestI1 == -1) {

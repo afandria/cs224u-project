@@ -64,6 +64,8 @@ public class CountEvents {
 	
 	// List of events and protagonists 
 	public List<Event> eventList = new ArrayList<Event>();
+	public static final int POPULAR_THRESHOLD = 50;
+	public List<Event> popularEventsList = new ArrayList<Event>();
 	public List<Protagonist> protList = new ArrayList<Protagonist>();
 	
 	// go from verb/protagonist to int. IS LIMITED BY MAX_VERBS AND MAX_PROTAGONISTS
@@ -133,10 +135,23 @@ public class CountEvents {
 			buf = new BufferedReader(new FileReader(eventCountsFile));
 			
 			int index = 0;
+			// USE to convert old indexes to our new indexes.
+			// Note that the order of rows in the eventCountsFile correspond perfectly with
+			// the eventToVerbsFile file rows
+			Map<Integer, Integer> newIndexer = new HashMap<Integer, Integer>();
 			while ((line = buf.readLine()) != null) {
-				int count = Integer.parseInt(line);
+				StringTokenizer tz = new StringTokenizer(line, " ");
+				//int e1 = Integer.parseInt(tz.nextToken());
+				//int e2 = Integer.parseInt(tz.nextToken());
+				int oldIndex = Integer.parseInt(tz.nextToken());
+				int count = Integer.parseInt(tz.nextToken());
 				eventOverallCount += count;
 				Event e = eventList.get(index);
+				
+				if (count > POPULAR_THRESHOLD)
+					popularEventsList.add(e);
+				
+				newIndexer.put(oldIndex, index);
 				
 				eventsCountMap.put(e, count);
 				
@@ -149,13 +164,14 @@ public class CountEvents {
 			
 			while ((line = buf.readLine()) != null) {
 				StringTokenizer tz = new StringTokenizer(line, " ");
-				int e1 = Integer.parseInt(tz.nextToken());
-				int e2 = Integer.parseInt(tz.nextToken());
+				int e1 = newIndexer.get(Integer.parseInt(tz.nextToken())); // newIndexer converts old index to new index
+				int e2 = newIndexer.get(Integer.parseInt(tz.nextToken()));
 				int count = Integer.parseInt(tz.nextToken());
 				
 				eventPairOverallCount += count;
 				
-				Pair<Event, Event> pair = new Pair<Event, Event>(eventList.get(e1), eventList.get(e2));
+				Pair<Event, Event> pair = new Pair<Event, Event>(
+						eventList.get(e1), eventList.get(e2));
 				
 				eventPairCounts.put(pair, count);
 			}
@@ -166,8 +182,8 @@ public class CountEvents {
 			
 			while ((line = buf.readLine()) != null) {
 				StringTokenizer tz = new StringTokenizer(line, " ");
-				int e1 = Integer.parseInt(tz.nextToken());
-				int e2 = Integer.parseInt(tz.nextToken());
+				int e1 = newIndexer.get(Integer.parseInt(tz.nextToken())); // newIndexer converts old index to new index
+				int e2 = newIndexer.get(Integer.parseInt(tz.nextToken()));
 				int pro = Integer.parseInt(tz.nextToken());
 				int count = Integer.parseInt(tz.nextToken());
 				

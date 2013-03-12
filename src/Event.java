@@ -13,7 +13,10 @@ public class Event {
 		argType = a;
 	}
 	
-	// public boolean isComplement(Event other)
+	public boolean isComplement(Event other) {
+		return (other.argType != argType) &&
+			(countEvents.eventToVerbMap.get(verb).equals(countEvents.eventToVerbMap.get(other.verb)));
+	}
 	
 		
 	public boolean equals(Object e){
@@ -30,12 +33,20 @@ public class Event {
 	}
 	
 	public Event getComplementEvent() {
-		return new Event(verb, !argType);
+		// This used to be correct, but now it isn't because verb refers to eventID...
+		//return new Event(verb, !argType);
+		
+		String v = countEvents.eventToVerbMap.get(verb);
+		String otherArg = "nsubj";
+		if (argType)
+			otherArg = "dobj";
+		int otherEventID = countEvents.verbArgTypeMap.get(new Pair<String, String>(v, otherArg));
+		return new Event(otherEventID, !argType);
 	}
 	
-	public int getLargeIndex() {
+	/*public int getLargeIndex() {
 		return 2 * verb + (argType ? 0 : 1);
-	}
+	}*/
 	
 	public double getPMI(Event e) {
 		Integer cooccur = countEvents.eventPairCounts.get(new Pair<Event, Event>(this, e));
@@ -51,8 +62,11 @@ public class Event {
 	}
 	
 	public double getSimilarity(Event e, Protagonist p) {
-		double freq = countEvents.eventPairProCounts.get(
+		Integer f = countEvents.eventPairProCounts.get(
 				new Triple<Event, Event, Protagonist>(this, e, p));
+		double freq = 0;
+		if (f != null)
+			freq = f;
 		if (freq == 0) {
 			return 0; // that's the minimum you'd get anyway
 		}

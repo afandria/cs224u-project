@@ -25,8 +25,23 @@ public class EventChain {
 		return null; // TODO
 	}
 	
+	public boolean hasEvent(Event e) {
+		for (Event e2 : events)
+			if (e.equals(e2))
+				return true;
+		return false;
+	}
+	
 	public void addEvent(Event e) {
-		events.add(e);
+		if (!hasEvent(e))
+			events.add(e);
+	}
+	// for the cloze test
+	public Event removeRandomEvent() {
+		int index = (int)(events.size() * Math.random());
+		Event e = events.get(index);
+		events.remove(index);
+		return e;
 	}
 	
 	/*public double getLikelihood() {
@@ -38,6 +53,13 @@ public class EventChain {
 		
 		// May wish to return 0 if this event is already inside (or has PMI 0 to any event inside)
 	}*/
+	
+	public Pair<Double, Protagonist> getNormalizedScore() {
+		Pair<Double, Protagonist> p = getScore();
+		return new Pair<Double, Protagonist>(
+				new Double(p.x * 2 / (events.size() * (events.size() - 1))),
+				p.y);
+	}
 	
 	// find highest score, regardless of protagonist, by finding the best protagonist
 	// May wish to return a pair instead
@@ -69,7 +91,15 @@ public class EventChain {
 		}
 		return s;
 	}
-	// public double chainSimilarity(); find highest scoring event(s)... and their score
+	// a little less work now that we know the best protagonist too
+	public double getChainSimilarity(Event e, Protagonist p) {
+		// Let's find who's the best, and the resulting score
+		double s = getScore(p);
+		for (int j = 0; j < events.size(); j++) {
+			s += events.get(j).getSimilarity(e, p);
+		}
+		return s;
+	}
 	public double getChainSimilarity(Event e) {
 		// Let's find who's the best, and the resulting score
 		double bestS = -1;
@@ -89,5 +119,18 @@ public class EventChain {
 			}
 		}
 		return bestS;
+	}
+
+	public int size() {
+		// TODO Auto-generated method stub
+		return events.size();
+	}
+	
+	public String toString() {
+		String c = "";
+		for (Event e : events) {
+			c += e.toString() + "\n";
+		}
+		return c;
 	}
 }
