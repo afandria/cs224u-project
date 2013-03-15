@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -28,15 +29,15 @@ public class CountEvents {
 	public static final double LAMBDA = 0.1;
 	
 	// for proIDToStringList and protList
-	public static final String protagonistNamesFileOut = "protagonistNames.txt";
+	public static final String protagonistNamesFileOut = "protagonistNames_small10.txt";
 	// for eventToVerbMap and eventList
-	public static final String eventToVerbsFileOut = "eventToVerbs.txt";
+	public static final String eventToVerbsFileOut = "eventToVerbs_small10.txt";
 	// for eventCountsMap and eventOverallCount
-	public static final String eventCountsFileOut = "eventCounts.txt";
+	public static final String eventCountsFileOut = "eventCounts_small10.txt";
 	// for eventPairCounts and eventPairOverallCount
-	public static final String eventPairCountsFileOut = "eventPairCounts.txt";
+	public static final String eventPairCountsFileOut = "eventPairCounts_small10.txt";
 	// for eventPairProCounts
-	public static final String eventPairProCountsFileOut = "eventPairProCounts.txt";
+	public static final String eventPairProCountsFileOut = "eventPairProCounts_small10.txt";
 	
 	
 	// Issue; we probably can't store everything.
@@ -86,7 +87,6 @@ public class CountEvents {
 	//public int[] eventCounts = new int[MAX_EVENTS]; // redundant, but useful
 	//public List<Integer> eventCounts = new ArrayList<Integer>();
 	public int eventOverallCount = 0;
-	
 	public CountEvents() {
 		initialize();
 	}
@@ -335,14 +335,29 @@ public class CountEvents {
 		
 		System.out.println(System.currentTimeMillis());
 		//getCountsByDeps(countEvents);
-		getCountsByMentions(countEvents);
+		int skip =-1;
+		getCountsByMentions(countEvents,skip);
 		
 		System.out.println(System.currentTimeMillis());
 		
 	}
 	
 	
-	public static void getCountsByMentions(CountEvents countEvents){
+
+	public ArrayList<String> listFilesForFolder(final File folder) {
+		
+		ArrayList<String> files = new ArrayList<String>();
+	    for (final File fileEntry : folder.listFiles()) {
+	        if (fileEntry.isDirectory()) {
+	            listFilesForFolder(fileEntry);
+	        } else {
+	        	files.add(fileEntry.getPath());
+	        }
+	    }
+	    return files;
+	}
+	
+	public static void getCountsByMentions(CountEvents countEvents,int skip){
 		
 
 		
@@ -355,13 +370,20 @@ public class CountEvents {
 			// for all pairs of the above found events, increment the event-event counts. Also increment the event-event-protagonist counts
 		
 		ArrayList<String> files = new ArrayList<String>();
-		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199405.xml.gz");
-		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199406.xml.gz");
-		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199407.xml.gz");
-		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199408.xml.gz");
-		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199409.xml.gz");
-		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199410.xml.gz");
+		final File folder = new File("C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1");
+		
+		files =countEvents.listFilesForFolder(folder);
+		//files.add("C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1\\afp_eng_199405.xml.gz");
+		
+		//files.add("C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1\\afp_eng_199406.xml.gz");
+		//files.add("C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1\\afp_eng_199407.xml.gz");
+		//files.add("C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1\\afp_eng_199408.xml.gz");
+		//files.add("C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1\\afp_eng_199409.xml.gz");
+		//files.add("C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1\\afp_eng_199410.xml.gz");
 		//"C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1\\afp_eng_199405.xml.gz";
+		
+
+		
 		for(String file:files){
 	        AgigaPrefs prefs = new AgigaPrefs();
 	        prefs.setAll(false);
@@ -508,7 +530,7 @@ public class CountEvents {
 	        			
 	        		}// okay. done with all that. Now to pair counts and stuff
 	        		
-	        		for(Event e1:events){
+	        		/*for(Event e1:events){
 	        			for(Event e2:events){
 	        				if(e1.equals(e2)) continue;
 	        				Integer temp = countEvents.eventPairCounts.get(new Pair<Event,Event>(e1,e2));
@@ -532,9 +554,44 @@ public class CountEvents {
 	        				
 	        			}
 	        			
+	        		}*/
+	        		
+	        		for(int i =0; i <events.size();i++){
+	        			Event e1 = events.get(i);
+	        			int end =0;
+	        			if(skip <0){
+	        				end = events.size();
+	        			}
+	        			else{
+	        				int temp = i + skip;
+	        				end=temp>events.size()? events.size():temp;
+	        			}
+	        			
+	        			for(int j =i+1; j<end;j++){
+	        				Event e2 = events.get(j);
+	        				if(e1.equals(e2)) continue;
+	        				Integer temp = countEvents.eventPairCounts.get(new Pair<Event,Event>(e1,e2));
+	        				int currCount;
+	        				if(temp!=null){
+	        					currCount = temp.intValue();
+	        				}else{
+	        					currCount =0;
+	        				}
+    						countEvents.eventPairCounts.put(new Pair<Event,Event>(e1,e2),currCount+1 ); //  order of the pair does not matter. The hashcode should reflect this I guess. if we want the order to matter we should follow some convention like <oldevent,newevent>	        						
+    						countEvents.eventPairOverallCount++;
+    						if(p!=null){// should not happen really
+    							temp = countEvents.eventPairProCounts.get(new Triple<Event,Event,Protagonist>(e1,e2,p));
+    							if(temp!=null){
+    								currCount = temp.intValue();
+    							}else{
+    								currCount=0;
+    							}
+    							countEvents.eventPairProCounts.put(new Triple<Event,Event,Protagonist>(e1,e2,p), currCount+1);
+	        				
+    						}
+	        			}
+	        			
 	        		}
-	        		
-	        		
 	        		
 	        	}// dealt with the corefs in this documents
 	        	idx++;	

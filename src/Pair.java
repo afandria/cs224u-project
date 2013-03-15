@@ -13,7 +13,7 @@ public class Pair<X, Y> {
   }  
   
   public int hashCode() {
-	  return x.hashCode() + y.hashCode();
+	  return 17*x.hashCode() + y.hashCode();
   }
   
   public String toString() {
