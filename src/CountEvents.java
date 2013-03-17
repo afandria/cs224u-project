@@ -29,16 +29,21 @@ public class CountEvents {
 	public static final double LAMBDA = 0.1;
 	
 	// for proIDToStringList and protList
-	public static final String protagonistNamesFileOut = "protagonistNames_small10.txt";
+	public static final String protagonistNamesFileOut = "protagonistNames.txt";
 	// for eventToVerbMap and eventList
-	public static final String eventToVerbsFileOut = "eventToVerbs_small10.txt";
+	public static final String eventToVerbsFileOut = "eventToVerbs.txt";
 	// for eventCountsMap and eventOverallCount
-	public static final String eventCountsFileOut = "eventCounts_small10.txt";
+	public static final String eventCountsFileOut = "eventCounts.txt";
 	// for eventPairCounts and eventPairOverallCount
-	public static final String eventPairCountsFileOut = "eventPairCounts_small10.txt";
+	public static final String eventPairCountsFileOut = "eventPairCounts.txt";
 	// for eventPairProCounts
-	public static final String eventPairProCountsFileOut = "eventPairProCounts_small10.txt";
+	public static final String eventPairProCountsFileOut = "eventPairProCounts.txt";
 	
+	public static final int POPULAR_THRESHOLD = 100;
+	public List<Event> popularEventsList = new ArrayList<Event>();
+	
+	public static final int MIN_PAIR_COUNT_TO_RELOAD = 10;
+	public static final int MIN_PAIR_PRO_COUNT_TO_RELOAD = 5;
 	
 	// Issue; we probably can't store everything.
 	// And this way may just take the firstN, rather than the bestN
@@ -65,8 +70,6 @@ public class CountEvents {
 	
 	// List of events and protagonists 
 	public List<Event> eventList = new ArrayList<Event>();
-	public static final int POPULAR_THRESHOLD = 50;
-	public List<Event> popularEventsList = new ArrayList<Event>();
 	public List<Protagonist> protList = new ArrayList<Protagonist>();
 	
 	// go from verb/protagonist to int. IS LIMITED BY MAX_VERBS AND MAX_PROTAGONISTS
@@ -103,18 +106,21 @@ public class CountEvents {
 		BufferedReader buf;
 		try {
 			/** first fill up our data **/
-			
+			System.out.println("Reading protagonists");
 			// Protagonists
 			buf = new BufferedReader(new FileReader(protagonistNamesFile));
 			
 			String line;
 			while ((line = buf.readLine()) != null) {
 				Protagonist p = new Protagonist(protList.size());
+				prosMap.put(line, protList.size());
+				
 				protList.add(p);
 				proIDToStringList.add(line);
 			}
 			buf.close();
-			
+
+			System.out.println("Reading verbs");
 			// Verbs
 			buf = new BufferedReader(new FileReader(eventToVerbsFile));
 			
@@ -130,7 +136,8 @@ public class CountEvents {
 					verbArgTypeMap.put(new Pair<String, String>(verb, "dobj"), e.verb);
 			}
 			buf.close();
-			
+
+			System.out.println("Reading event counts");
 			// Event Counts
 			buf = new BufferedReader(new FileReader(eventCountsFile));
 			
@@ -158,7 +165,8 @@ public class CountEvents {
 				index++;
 			}
 			buf.close();
-			
+
+			System.out.println("Reading event pair counts");
 			// Event Pair Counts
 			buf = new BufferedReader(new FileReader(eventPairCountsFile));
 			
@@ -168,15 +176,20 @@ public class CountEvents {
 				int e2 = newIndexer.get(Integer.parseInt(tz.nextToken()));
 				int count = Integer.parseInt(tz.nextToken());
 				
+				if (count > MIN_PAIR_COUNT_TO_RELOAD) {
+				
 				eventPairOverallCount += count;
 				
 				Pair<Event, Event> pair = new Pair<Event, Event>(
 						eventList.get(e1), eventList.get(e2));
 				
 				eventPairCounts.put(pair, count);
+				
+				}
 			}
 			buf.close();
-			
+
+			System.out.println("Reading pair protagonist counts");
 			// Event Pair Pro Counts
 			buf = new BufferedReader(new FileReader(eventPairProCountsFile));
 			
@@ -187,10 +200,17 @@ public class CountEvents {
 				int pro = Integer.parseInt(tz.nextToken());
 				int count = Integer.parseInt(tz.nextToken());
 				
+				Pair<Event, Event> pair = new Pair<Event, Event>(
+						eventList.get(e1), eventList.get(e2));
+				// only if this event pair was recorded
+				if (eventPairCounts.get(pair) != null && count > MIN_PAIR_PRO_COUNT_TO_RELOAD) {
+				
 				Triple<Event, Event, Protagonist> triple
 					= new Triple<Event, Event, Protagonist>(eventList.get(e1), eventList.get(e2), protList.get(pro));
 				
 				eventPairProCounts.put(triple, count);
+				
+				}
 			}
 			buf.close();
 			

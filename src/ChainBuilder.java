@@ -26,6 +26,8 @@ import edu.stanford.nlp.trees.TypedDependency;
 
 public class ChainBuilder {
 
+	
+	public static final int MAX_CHAINS_TO_BUILD = 5;
 	/**
 	 * @param args
 	 */
@@ -38,7 +40,7 @@ public class ChainBuilder {
 		// 2: eventCountsFileOut
 		// 3: eventPairCountsFileOut
 		// 4: eventPairProCountsFileOut
-		
+		long startTime = System.currentTimeMillis();
 		String[] countFiles = new String[5];
 		if (args.length > 5) {
 			for (int i = 0; i < 5; i++)
@@ -64,11 +66,12 @@ public class ChainBuilder {
 		Protagonist.countEvents = countEvents;
 		
 		//countEvents.printCounts();
-		
-		long startTime = System.currentTimeMillis();
+		long curTime = System.currentTimeMillis();
+		System.out.println("Loading Data Time Elapsed: " + (startTime - curTime));
+		System.out.println("# Popular Events: " + countEvents.popularEventsList.size());
 		//getCountsByDeps(countEvents);
 		List<EventChain> ecs = buildDocumentChains(countEvents);
-		long curTime = System.currentTimeMillis();
+		curTime = System.currentTimeMillis();
 		System.out.println("Chain Building Time Elapsed: " + (startTime - curTime));
 		
 		
@@ -79,12 +82,17 @@ public class ChainBuilder {
 			Pair<Double, Protagonist> pair = ecs.get(i).getNormalizedScore();
 			System.out.println("NScore " + pair.x);
 			System.out.println(ecs.get(i));
+			for (Event e: ecs.get(i).getEvents()) {
+				System.out.println(e.getSentenceString());
+			}
 			
 			pairs.add(new Pair<Double, Pair<Protagonist, EventChain>>(
 					pair.x,
 					new Pair<Protagonist, EventChain>(pair.y, ecs.get(i))));
 		}
 		
+		curTime = System.currentTimeMillis();
+		System.out.println("Building Chains Time Elapsed: " + (startTime - curTime));
 		System.out.println("Sorting");
 		Collections.sort(pairs, new PairComparator(false));
 		for (int i = 0; i < pairs.size(); i++) {
@@ -113,12 +121,16 @@ public class ChainBuilder {
 					break;
 				}
 			}
+			for (int rank = 0; rank < cloze.y.size(); rank++) {
+				Pair<Double, Event> simEvent = cloze.y.get(rank);
+				System.out.println(rank + " <Score " + simEvent.x + ", " + simEvent.y);
+			}
 			clozeSum += ranking;
 			if (ranking < unranked / 100)
 				clozeTop1PercentCount++;
 			if (ranking < unranked / 10)
 				clozeTop10PercentCount++;
-			System.out.println(ranking);
+			System.out.println(i + ": got rank " + ranking + " " + cloze.x);
 		}
 		System.out.println("Cloze Sum: " + clozeSum);
 		System.out.println("Cloze Top 1% Count: " + clozeTop1PercentCount);
@@ -134,9 +146,11 @@ public class ChainBuilder {
 
 		List<Pair<Double, Event>> scoreEventList = new ArrayList<Pair<Double, Event>>();
 		
-		Event removedEvent = ec.removeRandomEvent();
+		Pair<Integer, Event> indexEvent = ec.removeRandomEvent();
+		Event removedEvent = indexEvent.y;
+		int removedIndex = indexEvent.x;
 		for (Event e : countEvents.popularEventsList) {
-			double sim = ec.getChainSimilarity(e, pro);
+			double sim = ec.getChainSimilarity(e, pro, removedIndex);
 			scoreEventList.add(new Pair<Double, Event>(sim, e));
 		}
 		Collections.sort(scoreEventList, new PairComparator(false));
@@ -166,7 +180,10 @@ public class ChainBuilder {
 		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199409.xml.gz");
 		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199410.xml.gz");			//"C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1\\afp_eng_199405.xml.gz";
 	*/
-		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set2\\afp_eng_200901.xml.gz");
+		//files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set2\\afp_eng_200901.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set2\\nyt_eng_200901.xml.gz");
+		
+		
 		for(String file:files){
 	        AgigaPrefs prefs = new AgigaPrefs();
 	        prefs.setAll(false);
@@ -180,7 +197,7 @@ public class ChainBuilder {
 	        int idx=0;
 	        
 	        for(AgigaDocument doc:reader){
-	        	if(ecs.size() == 100)
+	        	if(ecs.size() == MAX_CHAINS_TO_BUILD)
 	        		return ecs;
 	        	if (idx % 100 == 0)
 	        		System.out.println(idx);
@@ -219,6 +236,8 @@ public class ChainBuilder {
 	        	// Use longest coreferent chain as the protagonist.
 	        	// This will build a document event chain.
 	        	EventChain chain = new EventChain();
+	        	
+	        	Protagonist p = null;
 	        	for (AgigaMention mention : longestCoref.getMentions()) {
 	        		AgigaSentence sent = sents.get(mention.getSentenceIdx());// Get the sentence
         			List<AgigaToken> tokens = sent.getTokens();
@@ -246,11 +265,24 @@ public class ChainBuilder {
         				if (eventIndex < 0)
         					continue;
         				
+        				// Set the protagonist because we found an event
+            			if (p == null) {
+                			AgigaToken token = tokens.get(mention.getHeadTokenIdx());
+                			Integer pid = countEvents.prosMap.get(token.getLemma());
+                			if (pid != null) {
+                			  p = new Protagonist(pid);
+            	        	  chain.setProtagonist(p);        	  
+                			}
+            			}
+        				
+            			// Add the event, as well as the sentence it came from
         				Event e = new Event(eventIndex, typ);
+        				AgigaSentence sentence = doc.getSents().get(mention.getSentenceIdx());
+        				e.sentence = sentence;
         				chain.addEvent(e);
 	    			}
 	        	}
-    			if (chain.size() >= 5)
+    			if (chain.getEvents().size() >= 5)
     				ecs.add(chain);
     			
 	        	// built 1 chain for 1 document

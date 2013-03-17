@@ -1,3 +1,6 @@
+import edu.jhu.agiga.AgigaSentence;
+import edu.jhu.agiga.AgigaToken;
+
 
 public class Event {
 	public static CountEvents countEvents = null;
@@ -8,6 +11,8 @@ public class Event {
 	public boolean argType;
 	public int argTokId;
 	public int sentId;
+	
+	public AgigaSentence sentence;
 	public Event(int v, boolean a) {
 		verb = v;
 		argType = a;
@@ -80,5 +85,19 @@ public class Event {
 			return "" + verb + " " + argType + ":" + countEvents.eventToVerbMap.get(this) + "S";
 		else
 			return "" + verb + " " + argType + ":" + countEvents.eventToVerbMap.get(this) + "O";
+	}
+	
+	public Event copy() {
+		return new Event(verb, argType);
+	}
+	public String getSentenceString() {
+		if (sentence != null) {
+			String s = "";
+			for (AgigaToken t : sentence.getTokens()) {
+				s += t.getWord() + " ";
+			}
+			return s;
+		}
+		return "";
 	}
 }
