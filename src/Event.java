@@ -55,6 +55,8 @@ public class Event {
 	
 	public double getPMI(Event e) {
 		Integer cooccur = countEvents.eventPairCounts.get(new Pair<Event, Event>(this, e));
+		if (cooccur == null)
+			return 0;
 		double cooccurP = (cooccur + 0.0) / countEvents.eventPairOverallCount;
 		
 		int thisCount = countEvents.eventsCountMap.get(this);
