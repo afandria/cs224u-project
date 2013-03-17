@@ -73,7 +73,7 @@ public class Event {
 		if (f != null)
 			freq = f;
 		if (freq == 0) {
-			return 0; // that's the minimum you'd get anyway
+			return getPMI(e); // that's the minimum you'd get anyway
 		}
 		freq = Math.log(freq);
 		freq *= CountEvents.LAMBDA;
