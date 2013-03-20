@@ -27,7 +27,8 @@ import edu.stanford.nlp.trees.TypedDependency;
 public class ChainBuilder {
 
 	
-	public static final int MAX_CHAINS_TO_BUILD = 5;
+	public static final int MAX_CHAINS_TO_BUILD = 2800;
+	public static final int MAX_CHAINS_PER_FILE = 400;
 	/**
 	 * @param args
 	 */
@@ -122,8 +123,13 @@ public class ChainBuilder {
 				}
 			}
 			for (int rank = 0; rank < cloze.y.size(); rank++) {
-				Pair<Double, Event> simEvent = cloze.y.get(rank);
-				System.out.println(rank + " <Score " + simEvent.x + ", " + simEvent.y);
+				if (rank == 0 || rank == cloze.y.size() / 100 || 
+						rank == cloze.y.size() / 10 || 
+						rank == ranking ||
+						rank == cloze.y.size() / 2) {
+				    Pair<Double, Event> simEvent = cloze.y.get(rank);
+				    System.out.println(rank + " <Score " + simEvent.x + ", " + simEvent.y);
+				}
 			}
 			clozeSum += ranking;
 			if (ranking < unranked / 100)
@@ -181,8 +187,17 @@ public class ChainBuilder {
 		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set1\\afp_eng_199410.xml.gz");			//"C:\\Users\\aman313\\Documents\\Winter-2013\\cs224u\\agiga_1.0\\Data\\Set1\\afp_eng_199405.xml.gz";
 	*/
 		//files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set2\\afp_eng_200901.xml.gz");
-		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set2\\nyt_eng_200901.xml.gz");
+		//files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\Set2\\nyt_eng_200901.xml.gz");
 		
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\set4\\test\\afp_eng_199606.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\set4\\test\\apw_eng_200007.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\set4\\test\\cna_eng_200602.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\set4\\test\\ltw_eng_200704.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\set4\\test\\nyt_eng_200106.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\set4\\test\\wpb_eng_201010.xml.gz");
+		files.add("C:\\Users\\AlexFandrianto\\Desktop\\Articles\\Stanford\\CS224U\\Smaller\\set4\\test\\xin_eng_200410.xml.gz");
+
+		int fileIndex = 0;
 		
 		for(String file:files){
 	        AgigaPrefs prefs = new AgigaPrefs();
@@ -196,9 +211,15 @@ public class ChainBuilder {
 	        StreamingDocumentReader reader = new StreamingDocumentReader(file, prefs);
 	        int idx=0;
 	        
+	        fileIndex++;
+	        
 	        for(AgigaDocument doc:reader){
 	        	if(ecs.size() == MAX_CHAINS_TO_BUILD)
 	        		return ecs;
+	        	if (ecs.size() == MAX_CHAINS_PER_FILE * fileIndex) // do 500 per file
+	        		break;
+	        	//if(Math.random() < .3) // skip randomly
+	        	//	continue;
 	        	if (idx % 100 == 0)
 	        		System.out.println(idx);
 	        	// get all mentions for the document
@@ -239,6 +260,9 @@ public class ChainBuilder {
 	        	
 	        	Protagonist p = null;
 	        	for (AgigaMention mention : longestCoref.getMentions()) {
+	        		if (chain.getEvents().size() == 8) // we're done if we hit 8
+	        			break; 
+	        		
 	        		AgigaSentence sent = sents.get(mention.getSentenceIdx());// Get the sentence
         			List<AgigaToken> tokens = sent.getTokens();
 	        		
@@ -265,6 +289,7 @@ public class ChainBuilder {
         				if (eventIndex < 0)
         					continue;
         				
+        				// DOING IT
         				// Set the protagonist because we found an event
             			if (p == null) {
                 			AgigaToken token = tokens.get(mention.getHeadTokenIdx());
@@ -282,7 +307,7 @@ public class ChainBuilder {
         				chain.addEvent(e);
 	    			}
 	        	}
-    			if (chain.getEvents().size() >= 5)
+    			if (chain.getEvents().size() >= 5 && chain.getEvents().size() <= 8)
     				ecs.add(chain);
     			
 	        	// built 1 chain for 1 document
